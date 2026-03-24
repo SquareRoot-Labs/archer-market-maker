@@ -11,6 +11,8 @@ pub struct SharedState {
     pub quote_total_lots: AtomicU64,
     pub onchain_sequence_number: AtomicU64,
 
+    pub volatility_bps: AtomicF64,
+
     pub consecutive_failures: AtomicU64,
 
     pub cycles_total: AtomicU64,
@@ -32,6 +34,7 @@ impl SharedState {
             base_total_lots: AtomicU64::new(0),
             quote_total_lots: AtomicU64::new(0),
             onchain_sequence_number: AtomicU64::new(0),
+            volatility_bps: AtomicF64::new(0.0),
             consecutive_failures: AtomicU64::new(0),
             cycles_total: AtomicU64::new(0),
             updates_sent: AtomicU64::new(0),

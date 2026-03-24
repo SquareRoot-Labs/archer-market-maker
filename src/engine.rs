@@ -105,6 +105,7 @@ pub async fn run_engine(
         let reference_mid = if cached_mid > 0 { cached_mid } else { last_sent_mid_ticks };
         let effective_hash = if needs_initial_book { 0 } else { last_structure_hash };
 
+        let volatility_bps = state.volatility_bps.load(Relaxed);
         let (decision, _spread_bps) = strategy.compute(
             mid_price,
             reference_mid,
@@ -112,6 +113,7 @@ pub async fn run_engine(
             &sdk_config,
             state.base_total_lots.load(Relaxed),
             state.quote_total_lots.load(Relaxed),
+            volatility_bps,
         );
 
         match decision {

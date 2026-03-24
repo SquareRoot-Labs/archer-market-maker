@@ -27,6 +27,11 @@ impl Strategy {
         Self { config: config.clone() }
     }
 
+    fn vol_multiplier(&self, volatility_bps: f64) -> f64 {
+        let raw = (volatility_bps / self.config.vol_baseline_bps).max(1.0);
+        raw.min(self.config.vol_max_multiplier)
+    }
+
     pub fn compute(
         &self,
         mid_price: f64,
@@ -35,11 +40,13 @@ impl Strategy {
         sdk_config: &MarketConfig,
         base_total_lots: u64,
         quote_total_lots: u64,
+        volatility_bps: f64,
     ) -> (QuoteDecision, f64) {
         if !mid_price.is_finite() || mid_price <= 0.0 {
             return (QuoteDecision::ClearBook, 0.0);
         }
 
+        let vol_mult = self.vol_multiplier(volatility_bps);
         let num_levels = self.config.spread_levels_bps.len();
         let pct_per_level = (self.config.inventory_pct / 100.0) / (num_levels as f64);
 
@@ -47,7 +54,7 @@ impl Strategy {
         let available_quote = quote_lots_to_amount(quote_total_lots, sdk_config);
         let quote_as_base = if mid_price > 0.0 { available_quote / mid_price } else { 0.0 };
 
-        let tightest_spread = self.config.spread_levels_bps[0];
+        let tightest_spread = self.config.spread_levels_bps[0] * vol_mult;
 
         let mut bids: Vec<Quote> = Vec::with_capacity(num_levels);
         let mut asks: Vec<Quote> = Vec::with_capacity(num_levels);
@@ -55,6 +62,8 @@ impl Strategy {
         let mut ask_sizes_q: Vec<u64> = Vec::with_capacity(num_levels);
 
         for &spread_bps in &self.config.spread_levels_bps {
+            let effective_spread = spread_bps * vol_mult;
+
             let ask_size = available_base * pct_per_level;
             let bid_size = quote_as_base * pct_per_level;
 
@@ -63,7 +72,7 @@ impl Strategy {
 
             if ask_q > 0.0 {
                 asks.push(Quote {
-                    price: mid_price * (1.0 + spread_bps / 10_000.0),
+                    price: mid_price * (1.0 + effective_spread / 10_000.0),
                     size: ask_size,
                 });
             }
@@ -71,7 +80,7 @@ impl Strategy {
 
             if bid_q > 0.0 {
                 bids.push(Quote {
-                    price: mid_price * (1.0 - spread_bps / 10_000.0),
+                    price: mid_price * (1.0 - effective_spread / 10_000.0),
                     size: bid_size,
                 });
             }

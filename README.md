@@ -11,7 +11,7 @@ Places bid and ask orders on an Archer on-chain orderbook using Coinbase spot pr
 The bot runs a loop every 200ms:
 
 1. **Fetch price** — polls Coinbase REST API for the latest spot price
-2. **Compute quotes** — places 8 bid/ask levels at fixed bps offsets from mid
+2. **Compute quotes** — places 8 bid/ask levels at volatility-adjusted bps offsets from mid
 3. **Send transaction** — picks the cheapest Solana instruction type to update the on-chain book
 
 ```
@@ -25,29 +25,37 @@ Coinbase REST API                     Archer Exchange
   └──────────┘      └──────────┘      └────────────────┘
                          │
                     Strategy
-                  (static spreads)
+                 (vol-adjusted spreads)
 ```
 
 ### What gets placed on the book
 
+Spreads widen automatically when volatility is high. The strategy tracks realized volatility (standard deviation of log returns) over the last 300 price samples and scales all spread levels by a multiplier:
+
 ```
-  Asks:  mid + 25 bps  ─── Level 8
-         mid + 20 bps  ─── Level 7
-         mid + 15 bps  ─── Level 6
-         mid + 12 bps  ─── Level 5
-         mid + 10 bps  ─── Level 4
-         mid +  7 bps  ─── Level 3
-         mid +  5 bps  ─── Level 2
-         mid +  2 bps  ─── Level 1 (tightest)
-  ────── Mid price ──────────────────
-  Bids:  mid -  2 bps  ─── Level 1 (tightest)
-         mid -  5 bps  ─── Level 2
-         mid -  7 bps  ─── Level 3
-         mid - 10 bps  ─── Level 4
-         mid - 12 bps  ─── Level 5
-         mid - 15 bps  ─── Level 6
-         mid - 20 bps  ─── Level 7
-         mid - 25 bps  ─── Level 8
+  multiplier = max(1.0, realized_vol / baseline_vol)    (capped at vol_max_multiplier)
+```
+
+In calm markets (vol at or below baseline), spreads stay as configured. When vol rises above baseline, all levels widen proportionally:
+
+```
+  Asks:  mid + 25 bps × vol_mult  ─── Level 8
+         mid + 20 bps × vol_mult  ─── Level 7
+         mid + 15 bps × vol_mult  ─── Level 6
+         mid + 12 bps × vol_mult  ─── Level 5
+         mid + 10 bps × vol_mult  ─── Level 4
+         mid +  7 bps × vol_mult  ─── Level 3
+         mid +  5 bps × vol_mult  ─── Level 2
+         mid +  2 bps × vol_mult  ─── Level 1 (tightest)
+  ────── Mid price ──────────────────────────────
+  Bids:  mid -  2 bps × vol_mult  ─── Level 1 (tightest)
+         mid -  5 bps × vol_mult  ─── Level 2
+         mid -  7 bps × vol_mult  ─── Level 3
+         mid - 10 bps × vol_mult  ─── Level 4
+         mid - 12 bps × vol_mult  ─── Level 5
+         mid - 15 bps × vol_mult  ─── Level 6
+         mid - 20 bps × vol_mult  ─── Level 7
+         mid - 25 bps × vol_mult  ─── Level 8
 ```
 
 Each level quotes an equal share of your deposited inventory.
@@ -151,8 +159,11 @@ All settings in `config/default.toml`:
 | `feed` | `coinbase_product_id` | — | Coinbase pair (e.g., `SOL-USD`) |
 | `feed` | `poll_interval_ms` | `1000` | Price poll interval |
 | `feed` | `staleness_timeout_ms` | `5000` | Pull quotes if feed stale |
-| `strategy` | `spread_levels_bps` | `[2,5,7,10,12,15,20,25]` | Bps offset per level |
+| `strategy` | `spread_levels_bps` | `[2,5,7,10,12,15,20,25]` | Base bps offset per level |
 | `strategy` | `inventory_pct` | `80` | % of inventory to quote |
+| `strategy` | `vol_window` | `300` | Rolling window size (price samples) for volatility |
+| `strategy` | `vol_baseline_bps` | `5.0` | Per-sample vol (bps) at which spreads are unchanged |
+| `strategy` | `vol_max_multiplier` | `5.0` | Maximum spread multiplier from vol scaling |
 | `execution` | `loop_interval_ms` | `200` | Engine cycle time |
 | `execution` | `priority_fee_microlamports` | `100` | Solana priority fee |
 | `execution` | `shadow_mode` | `false` | Dry run mode |
@@ -165,7 +176,8 @@ src/
 ├── main.rs          CLI + orchestration
 ├── config.rs        TOML config
 ├── feed.rs          Coinbase REST price poller
-├── strategy.rs      Static spread levels + CU optimization
+├── strategy.rs      Vol-adjusted spread levels + CU optimization
+├── volatility.rs    Realized vol tracker (log returns, ring buffer)
 ├── engine.rs        Core loop: price → strategy → TX
 ├── state.rs         Shared atomic state
 ├── tx.rs            Fire-and-forget TX sender
@@ -183,7 +195,6 @@ src/
 Edit `strategy.rs`. The `compute()` method takes a mid price and inventory, returns a `QuoteDecision`. The engine and TX layers don't change.
 
 Ideas to try:
-- Widen spreads when volatility is high
 - Lean quotes based on inventory (shift mid toward the side you want to offload)
 - Use WebSocket feed instead of REST polling for lower latency
 - Add multiple price sources and take the median

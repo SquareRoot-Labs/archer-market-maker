@@ -5,6 +5,7 @@ mod feed;
 mod state;
 mod strategy;
 mod tx;
+mod volatility;
 
 use std::sync::Arc;
 
@@ -113,7 +114,9 @@ async fn cmd_run(config_path: &std::path::Path, shadow: bool) -> Result<()> {
 
     let cancel = CancellationToken::new();
 
-    tokio::spawn(feed::run_feed(state.clone(), mm_config.feed.clone(), cancel.clone()));
+    tokio::spawn(feed::run_feed(
+        state.clone(), mm_config.feed.clone(), mm_config.strategy.vol_window, cancel.clone(),
+    ));
 
     tracing::info!("Waiting for price feed...");
     let mut waited = 0u64;

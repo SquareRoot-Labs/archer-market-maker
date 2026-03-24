@@ -83,6 +83,12 @@ pub struct StrategySettings {
     pub spread_levels_bps: Vec<f64>,
     #[serde(default = "default_inventory_pct")]
     pub inventory_pct: f64,
+    #[serde(default = "default_vol_window")]
+    pub vol_window: usize,
+    #[serde(default = "default_vol_baseline_bps")]
+    pub vol_baseline_bps: f64,
+    #[serde(default = "default_vol_max_multiplier")]
+    pub vol_max_multiplier: f64,
 }
 
 #[derive(Debug, Deserialize, Clone)]
@@ -125,12 +131,18 @@ fn validate_config(c: &MMConfig) -> Result<()> {
         c.strategy.inventory_pct > 0.0 && c.strategy.inventory_pct <= 100.0,
         "inventory_pct must be between 0 and 100"
     );
+    anyhow::ensure!(c.strategy.vol_window >= 2, "vol_window must be >= 2");
+    anyhow::ensure!(c.strategy.vol_baseline_bps > 0.0, "vol_baseline_bps must be positive");
+    anyhow::ensure!(c.strategy.vol_max_multiplier >= 1.0, "vol_max_multiplier must be >= 1.0");
     Ok(())
 }
 
 fn default_poll_ms() -> u64 { 1000 }
 fn default_staleness_ms() -> u64 { 5000 }
 fn default_inventory_pct() -> f64 { 80.0 }
+fn default_vol_window() -> usize { 300 }
+fn default_vol_baseline_bps() -> f64 { 5.0 }
+fn default_vol_max_multiplier() -> f64 { 5.0 }
 fn default_loop_ms() -> u64 { 200 }
 fn default_priority_fee() -> u64 { 100 }
 fn default_log_level() -> String { "info".into() }
