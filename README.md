@@ -4,24 +4,24 @@
 
 A simple market maker for the Archer Exchange.
 
-Places bid and ask orders on an Archer on-chain orderbook using Coinbase spot prices as a reference. Designed to be **easy to understand** and **a starting point** for building your own strategy.
+Places bid and ask orders on an Archer on-chain orderbook using Binance WebSocket prices as a reference, with optional cross-tick synthetic pricing. Designed to be **easy to understand** and **a starting point** for building your own strategy.
 
 ## How It Works
 
 The bot runs a loop every 200ms:
 
-1. **Fetch price** — polls Coinbase REST API for the latest spot price
+1. **Fetch price** — streams live best bid/ask via Binance WebSocket
 2. **Compute quotes** — places 8 bid/ask levels at volatility-adjusted bps offsets from mid
 3. **Send transaction** — picks the cheapest Solana instruction type to update the on-chain book
 
 ```
-Coinbase REST API                     Archer Exchange
-  (spot price)                         (on-chain orderbook)
+Binance WebSocket                     Archer Exchange
+  (live book ticker)                   (on-chain orderbook)
        │                                      ▲
        ▼                                      │
   ┌──────────┐      ┌──────────┐      ┌────────────────┐
   │  Feed    │ ──▶  │  Engine  │ ──▶  │  TX Sender     │
-  │ (poll)   │      │ (loop)   │      │ (fire & forget)│
+  │ (stream) │      │ (loop)   │      │ (fire & forget)│
   └──────────┘      └──────────┘      └────────────────┘
                          │
                     Strategy
@@ -102,7 +102,9 @@ maker_keypair_path = "~/.config/solana/id.json"
 rpc_url = "https://mainnet.helius-rpc.com?api-key=YOUR_KEY"
 
 [feed]
-coinbase_product_id = "SOL-USD"
+binance_symbol = "SOLUSDT"
+# Optional: derive a synthetic pair via cross-tick division
+# cross_symbol = "BTCUSDT"   # price = SOLUSDT / BTCUSDT
 ```
 
 ### 3. Initialize and deposit
@@ -156,8 +158,9 @@ All settings in `config/default.toml`:
 | `market` | `market_pubkey` | — | Archer market public key |
 | `market` | `maker_keypair_path` | — | Path to Solana keypair |
 | `connection` | `rpc_url` | — | Solana RPC endpoint |
-| `feed` | `coinbase_product_id` | — | Coinbase pair (e.g., `SOL-USD`) |
-| `feed` | `poll_interval_ms` | `1000` | Price poll interval |
+| `feed` | `binance_symbol` | — | Binance symbol (e.g. `SOLUSDT`) |
+| `feed` | `cross_symbol` | `""` | Cross pair for synthetic pricing (e.g. `BTCUSDT`) |
+| `feed` | `binance_ws_url` | `wss://stream.binance.com:9443/ws` | Binance WebSocket endpoint |
 | `feed` | `staleness_timeout_ms` | `5000` | Pull quotes if feed stale |
 | `strategy` | `spread_levels_bps` | `[2,5,7,10,12,15,20,25]` | Base bps offset per level |
 | `strategy` | `inventory_pct` | `80` | % of inventory to quote |
@@ -175,7 +178,7 @@ All settings in `config/default.toml`:
 src/
 ├── main.rs          CLI + orchestration
 ├── config.rs        TOML config
-├── feed.rs          Coinbase REST price poller
+├── feed.rs          Binance WebSocket price feed (with cross-tick support)
 ├── strategy.rs      Vol-adjusted spread levels + CU optimization
 ├── volatility.rs    Realized vol tracker (log returns, ring buffer)
 ├── engine.rs        Core loop: price → strategy → TX
@@ -196,7 +199,6 @@ Edit `strategy.rs`. The `compute()` method takes a mid price and inventory, retu
 
 Ideas to try:
 - Lean quotes based on inventory (shift mid toward the side you want to offload)
-- Use WebSocket feed instead of REST polling for lower latency
 - Add multiple price sources and take the median
 
 ## License

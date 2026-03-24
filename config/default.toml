@@ -3,7 +3,7 @@
 # =============================================================================
 #
 # A simple market maker for the Archer Exchange on Solana.
-# Places static bid/ask levels around a Coinbase spot price.
+# Streams live prices via WebSocket and places bid/ask levels around mid.
 #
 # Replace market_pubkey, maker_keypair_path, and rpc_url before running.
 # =============================================================================
@@ -17,14 +17,18 @@ maker_keypair_path = "~/.config/solana/id.json"
 rpc_url = "https://api.mainnet-beta.solana.com"
 
 [feed]
-# Coinbase product ID — must match your market's pair.
-# Examples: "SOL-USD", "ETH-USD", "BTC-USD"
-coinbase_product_id = "SOL-USD"
+# Binance symbol — must match your market's pair.
+# Examples: "SOLUSDT", "ETHUSDT", "BTCUSDT"
+binance_symbol = "SOLUSDT"
 
-# How often to poll Coinbase for a new price (milliseconds).
-poll_interval_ms = 1000
+# Optional cross symbol for synthetic pricing. When set, the derived price
+# is primary / cross_mid. Useful for pairs like ETHBTC where you subscribe
+# to both ETHUSDT and BTCUSDT and divide. Leave empty for direct pricing.
+# cross_symbol = "USDCUSDT"
 
-# If no successful price fetch for this long, pull all quotes.
+# binance_ws_url = "wss://stream.binance.com:9443/ws"
+
+# If no price update for this long, pull all quotes.
 staleness_timeout_ms = 5000
 
 [strategy]

@@ -17,8 +17,9 @@ bytemuck = { version = "1.24", features = ["derive"] }
 tokio = { version = "1.40", features = ["full"] }
 tokio-util = "0.7"
 
-# HTTP client for Coinbase price feed
-reqwest = { version = "0.12", features = ["json"] }
+# WebSocket price feeds
+tokio-tungstenite = { version = "0.24", features = ["native-tls"] }
+futures-util = "0.3"
 
 # Serialization
 serde = { version = "1", features = ["derive"] }

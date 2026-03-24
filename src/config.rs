@@ -71,9 +71,11 @@ pub struct ConnectionSettings {
 
 #[derive(Debug, Deserialize, Clone)]
 pub struct FeedSettings {
-    pub coinbase_product_id: String,
-    #[serde(default = "default_poll_ms")]
-    pub poll_interval_ms: u64,
+    pub binance_symbol: String,
+    #[serde(default)]
+    pub cross_symbol: String,
+    #[serde(default = "default_binance_ws")]
+    pub binance_ws_url: String,
     #[serde(default = "default_staleness_ms")]
     pub staleness_timeout_ms: u64,
 }
@@ -120,7 +122,7 @@ fn validate_config(c: &MMConfig) -> Result<()> {
     anyhow::ensure!(!c.market.market_pubkey.is_empty(), "market_pubkey required");
     anyhow::ensure!(!c.market.maker_keypair_path.is_empty(), "maker_keypair_path required");
     anyhow::ensure!(!c.connection.rpc_url.is_empty(), "rpc_url required");
-    anyhow::ensure!(!c.feed.coinbase_product_id.is_empty(), "coinbase_product_id required");
+    anyhow::ensure!(!c.feed.binance_symbol.is_empty(), "binance_symbol required");
     anyhow::ensure!(!c.strategy.spread_levels_bps.is_empty(), "need at least 1 spread level");
     anyhow::ensure!(c.strategy.spread_levels_bps.len() <= 16, "max 16 levels per side");
     anyhow::ensure!(
@@ -137,7 +139,7 @@ fn validate_config(c: &MMConfig) -> Result<()> {
     Ok(())
 }
 
-fn default_poll_ms() -> u64 { 1000 }
+fn default_binance_ws() -> String { "wss://stream.binance.com:9443/ws".into() }
 fn default_staleness_ms() -> u64 { 5000 }
 fn default_inventory_pct() -> f64 { 80.0 }
 fn default_vol_window() -> usize { 300 }
