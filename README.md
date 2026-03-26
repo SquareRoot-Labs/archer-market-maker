@@ -2,6 +2,8 @@
 
 [Archer](https://archer.exchange) is a fully on-chain order book exchange on Solana that eliminates adverse selection faced by market makers through sovereign maker books, parametric pricing, and pro-rata execution. Instead of a single shared order book, each market maker owns their own on-chain book — enabling zero write-lock contention, O(1) repricing, and incentives that reward depth over speed. [Read more about how Archer works](https://x.com/mmdhrumil/status/2026301400158810390).
 
+> **Caution:** Archer Exchange smart contract audits are currently in progress. Please use this software at your own discretion and start with lower funds.
+
 A simple market maker for the Archer Exchange.
 
 Places bid and ask orders on an Archer on-chain orderbook using Binance WebSocket prices as a reference, with optional cross-tick synthetic pricing. Designed to be **easy to understand** and **a starting point** for building your own strategy.
