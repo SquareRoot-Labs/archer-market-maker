@@ -17,8 +17,8 @@ use crate::{
 };
 
 const CU_CLEAR_BOOK: u32 = 650;
-const CU_MID_ONLY: u32 = 750;
-const CU_FULL_UPDATE: u32 = 5500;
+const CU_MID_ONLY: u32 = 850;
+const CU_FULL_UPDATE: u32 = 5600;
 
 pub async fn run_engine(
     state: Arc<SharedState>,

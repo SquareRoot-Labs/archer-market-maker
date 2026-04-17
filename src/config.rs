@@ -46,6 +46,13 @@ pub enum Cli {
         #[arg(short, long, default_value = "config/default.toml")]
         config: PathBuf,
     },
+    /// Set the maker book's expiry_in_slots (0 disables the aggregator's expiry-skip check)
+    SetExpiry {
+        #[arg(short, long, default_value = "config/default.toml")]
+        config: PathBuf,
+        #[arg(long)]
+        slots: u64,
+    },
 }
 
 #[derive(Debug, Deserialize, Clone)]

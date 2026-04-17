@@ -15,6 +15,7 @@ pub const IX_UPDATE_MID_PRICE: u8 = 8;
 pub const IX_CLEAR_BOOK: u8 = 9;
 pub const IX_MAKER_DEPOSIT: u8 = 11;
 pub const IX_MAKER_WITHDRAW: u8 = 12;
+pub const IX_UPDATE_EXPIRY_IN_SLOTS: u8 = 30;
 
 pub const MAKER_LEVEL_SIZE: usize = core::mem::size_of::<MakerLevel>();
 
@@ -49,6 +50,9 @@ pub struct MakerBook {
     pub tick_conversion_den: u64,
     pub bid_levels: [MakerLevel; MAX_LEVELS],
     pub ask_levels: [MakerLevel; MAX_LEVELS],
+    pub last_updated_slot: u64,
+    pub expiry_in_slots: u64,
+    pub _reserved: [u64; 6],
 }
 
 impl MakerBook {

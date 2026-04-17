@@ -69,8 +69,8 @@ Solana transactions cost compute units. The bot detects what changed since last 
 
 | Instruction | CU Cost | When |
 |-------------|---------|------|
-| `UpdateMidPrice` | ~200 | Price moved but level structure unchanged (most cycles) |
-| `UpdateBook` | ~4,500 | Level sizes or count changed |
+| `UpdateMidPrice` | ~400 | Price moved but level structure unchanged (most cycles) |
+| `UpdateBook` | ~5,000 | Level sizes or count changed |
 | `ClearBook` | ~180 | Shutdown, error, or stale feed |
 
 In practice, **~90% of cycles use the cheap mid-only path**, saving ~85% of CU.
@@ -144,12 +144,15 @@ cargo run --release -- kill
 ```
 archer-market-maker <COMMAND>
 
-  run       Start the market maker
-  init      Initialize maker book on-chain (one-time)
-  deposit   Deposit base + quote tokens
-  withdraw  Withdraw all funds
-  kill      Emergency: clear all orders immediately
-  status    Print on-chain book state
+  run         Start the market maker
+  init        Initialize maker book on-chain (one-time)
+  deposit     Deposit base + quote tokens
+  withdraw    Withdraw all funds
+  kill        Emergency: clear all orders immediately
+  status      Print on-chain book state
+  set-expiry  Set expiry_in_slots (aggregator skips this book's quotes
+              once `current_slot - last_updated_slot >= expiry_in_slots`;
+              `--slots 0` disables the check)
 ```
 
 ## Configuration

@@ -12,7 +12,8 @@ use std::sync::Arc;
 use anyhow::{Context, Result};
 use crate::archer::accounts::{maker_balances, parse_market_state, active_bid_levels, active_ask_levels};
 use crate::archer::ix_builder::{
-    build_clear_book_ix, build_deposit_ix, build_initialize_maker_book_ix, build_withdraw_ix,
+    build_clear_book_ix, build_deposit_ix, build_initialize_maker_book_ix,
+    build_update_expiry_in_slots_ix, build_withdraw_ix,
 };
 use crate::archer::client::{ArcherClient, SendOptions};
 use crate::archer::types::MakerBook;
@@ -60,6 +61,7 @@ async fn main() -> Result<()> {
         Cli::Withdraw { config } => cmd_withdraw(&config).await,
         Cli::Kill { config } => cmd_kill(&config).await,
         Cli::Status { config } => cmd_status(&config).await,
+        Cli::SetExpiry { config, slots } => cmd_set_expiry(&config, slots).await,
     }
 }
 
@@ -151,6 +153,22 @@ async fn cmd_init(config_path: &std::path::Path) -> Result<()> {
     let ix = build_initialize_maker_book_ix(&keypair.pubkey(), &market);
     let sig = client.send_instructions(&[ix], &[&keypair], SendOptions::default()).await?;
     println!("Maker book initialized: {sig}");
+    Ok(())
+}
+
+async fn cmd_set_expiry(config_path: &std::path::Path, slots: u64) -> Result<()> {
+    let mm_config = load_config(config_path)?;
+    init_tracing(&mm_config.monitoring.log_level);
+    let keypair = load_keypair(&mm_config.market.maker_keypair_path)?;
+    let market: Pubkey = mm_config.market.market_pubkey.parse()?;
+    let client = ArcherClient::new(&mm_config.connection.rpc_url);
+    let ix = build_update_expiry_in_slots_ix(&keypair.pubkey(), &market, slots);
+    let sig = client.send_instructions(&[ix], &[&keypair], SendOptions::default()).await?;
+    if slots == 0 {
+        println!("expiry_in_slots set to 0 (disabled): {sig}");
+    } else {
+        println!("expiry_in_slots set to {slots}: {sig}");
+    }
     Ok(())
 }
 

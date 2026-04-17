@@ -47,6 +47,24 @@ pub fn build_clear_book_ix(
     }
 }
 
+pub fn build_update_expiry_in_slots_ix(
+    maker: &Pubkey,
+    market: &Pubkey,
+    expiry_in_slots: u64,
+) -> Instruction {
+    let (maker_book_pda, _) = MakerBook::get_address(market, maker);
+    let mut data = vec![IX_UPDATE_EXPIRY_IN_SLOTS];
+    data.extend_from_slice(&expiry_in_slots.to_le_bytes());
+    Instruction {
+        program_id: PROGRAM_ID,
+        accounts: vec![
+            AccountMeta::new_readonly(*maker, true),
+            AccountMeta::new(maker_book_pda, false),
+        ],
+        data,
+    }
+}
+
 pub fn build_initialize_maker_book_ix(maker: &Pubkey, market: &Pubkey) -> Instruction {
     let (maker_book_pda, _) = MakerBook::get_address(market, maker);
     Instruction {
@@ -156,7 +174,7 @@ pub fn build_deposit_ix(
     Ok(Instruction {
         program_id: PROGRAM_ID,
         accounts: vec![
-            AccountMeta::new(*market, false),
+            AccountMeta::new_readonly(*market, false),
             AccountMeta::new(maker_book_pda, false),
             AccountMeta::new_readonly(*maker, true),
             AccountMeta::new_readonly(config.base_mint, false),
@@ -203,7 +221,7 @@ pub fn build_withdraw_ix(
     Ok(Instruction {
         program_id: PROGRAM_ID,
         accounts: vec![
-            AccountMeta::new(*market, false),
+            AccountMeta::new_readonly(*market, false),
             AccountMeta::new(maker_book_pda, false),
             AccountMeta::new_readonly(*maker, true),
             AccountMeta::new_readonly(config.base_mint, false),
