@@ -13,9 +13,12 @@ pub const IX_INITIALIZE_MAKER_BOOK: u8 = 6;
 pub const IX_UPDATE_BOOK: u8 = 7;
 pub const IX_UPDATE_MID_PRICE: u8 = 8;
 pub const IX_CLEAR_BOOK: u8 = 9;
+pub const IX_SET_BOOK_DELEGATE: u8 = 10;
 pub const IX_MAKER_DEPOSIT: u8 = 11;
 pub const IX_MAKER_WITHDRAW: u8 = 12;
+pub const IX_UPDATE_SYNC_SPREAD: u8 = 26;
 pub const IX_UPDATE_EXPIRY_IN_SLOTS: u8 = 30;
+pub const IX_CLOSE_MAKER_BOOK: u8 = 31;
 
 pub const MAKER_LEVEL_SIZE: usize = core::mem::size_of::<MakerLevel>();
 

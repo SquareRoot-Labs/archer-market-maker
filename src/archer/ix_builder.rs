@@ -47,6 +47,56 @@ pub fn build_clear_book_ix(
     }
 }
 
+pub fn build_close_maker_book_ix(maker: &Pubkey, market: &Pubkey) -> Instruction {
+    let (maker_book_pda, _) = MakerBook::get_address(market, maker);
+    Instruction {
+        program_id: PROGRAM_ID,
+        accounts: vec![
+            AccountMeta::new(*maker, true),
+            AccountMeta::new_readonly(*market, false),
+            AccountMeta::new(maker_book_pda, false),
+        ],
+        data: vec![IX_CLOSE_MAKER_BOOK],
+    }
+}
+
+pub fn build_set_book_delegate_ix(
+    maker: &Pubkey,
+    market: &Pubkey,
+    delegate: &Pubkey,
+) -> Instruction {
+    let (maker_book_pda, _) = MakerBook::get_address(market, maker);
+    Instruction {
+        program_id: PROGRAM_ID,
+        accounts: vec![
+            AccountMeta::new_readonly(*maker, true),
+            AccountMeta::new(maker_book_pda, false),
+            AccountMeta::new_readonly(*delegate, false),
+        ],
+        data: vec![IX_SET_BOOK_DELEGATE],
+    }
+}
+
+pub fn build_update_sync_spread_ix(
+    signer: &Pubkey,
+    market: &Pubkey,
+    maker: &Pubkey,
+    sync_spread_ticks: u16,
+) -> Instruction {
+    let (maker_book_pda, _) = MakerBook::get_address(market, maker);
+    let mut data = vec![IX_UPDATE_SYNC_SPREAD];
+    data.extend_from_slice(&sync_spread_ticks.to_le_bytes());
+    Instruction {
+        program_id: PROGRAM_ID,
+        accounts: vec![
+            AccountMeta::new_readonly(*signer, true),
+            AccountMeta::new(maker_book_pda, false),
+            AccountMeta::new_readonly(*market, false),
+        ],
+        data,
+    }
+}
+
 pub fn build_update_expiry_in_slots_ix(
     maker: &Pubkey,
     market: &Pubkey,
