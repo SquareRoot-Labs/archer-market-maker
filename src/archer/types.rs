@@ -35,7 +35,7 @@ pub struct MakerBook {
     pub delegate: Pubkey,
     pub mid_price_ticks: u64,
     pub quote_delta_per_tick: u64,
-    pub min_reference_price: u64,
+    pub min_mid_price_ticks: u64,
     pub quote_locked: u64,
     pub quote_free: u64,
     pub base_locked: u64,
@@ -99,7 +99,7 @@ pub struct MarketStateHeader {
     pub sync_fee_multiplier: u8,
     pub min_async_delay_slots: u16,
     pub max_async_delay_slots: u16,
-    pub limit_order_fee_ppm: u32,
+    pub _reserved: u32,
 }
 
 unsafe impl Pod for MarketStateHeader {}
