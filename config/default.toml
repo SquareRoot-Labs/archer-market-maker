@@ -10,7 +10,7 @@
 
 [market]
 # SOL USDC market
-market_pubkey = "4G1A6nhCq3QdHMoVVtJ3PZmAHR4temsvXrWgb9yxX7ZN"
+market_pubkey = "u8tnfCb1JSSghuNFquQ2beStYgAN1kmd1f1Lhxbaec4"
 maker_keypair_path = "~/.config/solana/id.json"
 
 [connection]
